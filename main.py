@@ -1,4 +1,4 @@
-import telebot 
+import telebot
 import private_file
 
 bot=telebot.TeleBot(private_file.API_name)
@@ -21,32 +21,26 @@ def get_name(message):
 def get_surname(message):
     global surname;
     surname=message.text
+    bot.send_message(message.chat.id, "this is before calling function GetAge")
     bot.send_message(message.chat.id,"Enter your age: ")
     bot.register_next_step_handler(message,get_age)
+    bot.send_message(message.chat.id, "this is after calling function GetAge")
 def get_age(message):
     global age;
     age=message.text
     bot.send_message(message.chat.id,"Lets check if everything is right")
-    bot.send_message(message.chat.id,'Hello,'+surname+' '+name+'! Your age is'+age)
-#      get_result(message)
+    bot.send_message(message.chat.id,'Hello,'+surname+' '+name+'! Your age is '+age)
+    bot.register_next_step_handler(message,get_result)
 
-# def get_result(message):
-#     bot.send_message(message.chat.id,'Hello,',surname,name,'! Your age is',age)
+def get_result(message):
+    bot.send_message(message.chat.id,'Hello,',surname,name,'! Your age is',age)
+
+@bot.message_handler(content_types='text')
+
+def report(message):
+    if message.text=='check':
+        bot.reply_to(message, 'Your expression is')
+    else:
+        bot.reply_to(message,'Incorrect')
 
 bot.infinity_polling()
-
-
-# bot = telebot.TeleBot("2088166250:AAEXeKCTXPermVngV2n_naKbmQzBvnZilO0")
-# @bot.message_handler(content_types=["text"])
-
-
-# def get_text_messages(message):
-#     if message.text=='Hello there':
-#         bot.send_message(message.chat.id, 'General Kenobi')
-#     elif message.text=='whatsup':
-#         bot.send_message(message.chat.id,'Wazaaaaa')
-#     else:
-#         bot.send_message(message.chat.id, message.text)
-#         # bot.send_message(message.from_user.id, message.text) # 'message.from_user.id' suppose to work like 'chat.id' - just different path
-
-# bot.infinity_polling()
