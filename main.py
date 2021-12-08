@@ -1,61 +1,54 @@
 import telebot
 import private_file
+from telebot import types
 
 bot=telebot.TeleBot(private_file.API_name)
 
 @bot.message_handler(commands='register')
 
-def start(message):
-    if 'register' in message.text:
-        bot.send_message(message.chat.id,'register is inside')
+def MakeMarkup(message):
 
-    if message.text=='/register':
-        bot.send_message(message.chat.id,'Enter your name: ')
-        bot.register_next_step_handler(message, get_name)
-    else:
-        bot.send_message(message.chat.id,'Try enter /register')
+    markup=types.ReplyKeyboardMarkup(one_time_keyboard=True)
 
-def get_name(message):
-    global name;
-    name=message.text
-    bot.send_message(message.chat.id,"Enter your surname: ")
-    bot.register_next_step_handler(message,get_surname)
+    button_1=types.KeyboardButton('Yes')
+    button_2=types.KeyboardButton('No')
 
-def get_surname(message):
-    global surname;
-    surname=message.text
-    bot.send_message(message.chat.id, "this is before calling function GetAge")
-    bot.send_message(message.chat.id,"Enter your age: ")
-    bot.register_next_step_handler(message,get_age)
-    bot.send_message(message.chat.id, "this is after calling function GetAge")
-def get_age(message):
-    global age;
-    age=message.text
-    bot.send_message(message.chat.id,"Lets check if everything is right")
-    bot.send_message(message.chat.id,'Hello,'+surname+name+'! Your age is'+age)
-    # bot.pin_chat_message(name+' '+surname+' '+age,message.chat.id) #don't pin message in dialog, pin in conference
+    markup.row(button_1,button_2)
 
-@bot.message_handler(commands='repeat')
-
-def reply(message):
-    bot.send_message(message.chat.id,'Are are you stuuupid?', message.text)
-
-@bot.message_handler(content_types='text')
-
-def report(message):
-    if message.text=='check':
-        bot.reply_to(message, 'Your expression is')
-        with open(r'C:\Users\Lyra Hearthstrings\Desktop\Lyra Heartstrings\Media\Pictures\ОtNеЯ\9SR03mw6Rv8.jpg', 'rb') as photo:   #in future use with as safety measurement
-            bot.send_photo(message.chat.id, photo, caption='STOP RIGHT HERE OR BONK!!!')
-    else:
-        bot.reply_to(message,'Incorrect or try /register or /repeat or word  "check"')
-        bot.send_photo(message.chat.id, open(r'C:\Users\Lyra Hearthstrings\Desktop\Jared.jpg', 'rb'))   #never forget to add 'r' before path to the photo to read it properly
+    keyboard=types.ReplyKeyboardRemove()
 
 
+    bot.send_message(message.chat.id, 'Your answer was :'+message.text,reply_markup=markup)
 
-# message handler with pictures and pop-up message for 4 choices
+
+# @bot.callback_query_handler(func=lambda call: True)
+
+# def handle_call(call):
+
+#     keyboard=types.ReplyKeyboardRemove()
+
+#     if call.text=='Yes':
+#         bot.send_message(call.message.chat.id, 'Your correct answer was :'+call.data,)
+#     elif call.text=='No':
+#         bot.send_message(call.message.chat.id, 'Your incorrect answer was :'+call.data)
+#     else:
+#         # bot.send_message(call.message.chat.id, 'Your stupid answer was :'+call.data,reply_markup=keyboard)
+#         bot.send_message(call.message.chat.id, 'Your stupid answer was :'+call.data)
+
+# @bot.message_handler(commands=['start'])
+# def start(message):
+#     markup = types.InlineKeyboardMarkup()
+#     buttonA = types.InlineKeyboardButton('A', callback_data='a')
+#     buttonB = types.InlineKeyboardButton('B', callback_data='b')
+#     buttonC = types.InlineKeyboardButton('C', callback_data='c')
+
+#     markup.row(buttonA, buttonB)
+#     markup.row(buttonC)
+
+#     keyboard=types.ReplyKeyboardRemove()
+
+#     bot.send_message(message.chat.id, 'It works!', reply_markup=keyboard)
 
 
 bot.infinity_polling()
-
 
