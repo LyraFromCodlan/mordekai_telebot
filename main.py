@@ -1,12 +1,12 @@
 import telebot
 import private_file
 from telebot import types
-
+import ext_func as extf
 
 #functions for telebots handler
-def NewMarkupName(film_lis):                                            #names keyboard_generator
+def NewMarkupName(name_lis):                                            #names keyboard_generator
     new_markup=types.ReplyKeyboardMarkup(one_time_keyboard=True)
-    for el in film_lis:
+    for el in name_lis:
         new_markup.add(types.KeyboardButton(text=el))
     return new_markup
 
@@ -21,24 +21,6 @@ bot=telebot.TeleBot(private_file.API_name)                              #telebot
 
 @bot.message_handler(commands='start')
 
-# #old variant
-
-# def start_bot(message):
-#     options_keyboard=NewMarkupName(['Series','Comics','Movies'])
-#     bot.send_message(message.chat.id,'Welcome to Mordecai telegrambot. Today I will help you to entertain yourself. What would you like to watch?', reply_markup=options_keyboard)
-#     bot.register_next_step_handler(message,options_handler)
-
-# def options_handler(message):
-
-#     if message.text=='Movies':
-#         pass
-#     if message.text=='Series':
-#         bot.register_next_step_handler(message,ChoseFilm)
-#     elif message.text=='Comics':
-#         pass
-#     else:
-#         bot.send_message(message.chat.id,'Dear Sir or Madam, You must have pressed something wrong. Please, chose your answer from the button menu')
-#         bot.register_next_step_handler(message,options_handler)
 
 #start bot and handle first level requests
 
@@ -52,7 +34,6 @@ def start_bot(message):
     ]
     )
     welcome_text='Welcome to Mordecai telegrambot. Today I will help you to entertain yourself. What would you like to watch?'
-
     bot.send_message(chat_id=message.chat.id,text=welcome_text, reply_markup=options_keyboard)
 
 
@@ -60,99 +41,95 @@ def start_bot(message):
 @bot.callback_query_handler(func=lambda call: call.data=='mov')
 
 def handle_mov(call):
-    movies_lis=[]
-    movie_keyboard=NewMarkupName(movies_lis)
-    bot.send_message(call.message.chat.id, 'We have variety of movies. Chose one from the button menu below: ',reply_markup=movie_keyboard)
-    print('call message id: ', call.message.message_id)
-    bot.register_next_step_handler(call.message,ChoseFilm)
+    bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)
+    movies_list=['Atlantis','Young Justice','Regular Show']                                     #movie list - must be replaced with database data
+    mov_keyboard=extf.NewMarkupName(name_lis=movies_list)
+    msg_text='We have variety of movies. Chose one from the button menu below: '
 
-def ChoseFilm(message):
+    bot.send_message(call.message.chat.id, msg_text, reply_markup=mov_keyboard)
 
-    film_list=['Atlantis','Young Justice','Regular Show']
-    keyboard=NewMarkupName(film_lis=film_list)
-
-    bot.send_message(message.chat.id,'Choose movie you want to see: ', reply_markup=keyboard)
-
-    bot.register_next_step_handler(message,ViewMovie)
+    bot.register_next_step_handler(call.message,ViewMovie)
 
 def ViewMovie(message):
+    bot.send_message(message.chat.id,text=('You have chosen %s ' % message.text), reply_markup=types.ReplyKeyboardRemove())
 
-    bot.send_message(message.chat.id,text=('Here it is) %s is your movie' % message.text), reply_markup=types.ReplyKeyboardRemove())
-    start_markup=NewMarkupCommand(['start'])
+    msg_text='Do you want to watch movie, access comments or give your rating?\nChose from the menu below'
+    option_dict={'Watch':'wt','Comments':'cmnt','Rating':'rt'}
+    options_keyboard=extf.NewInlineMarkup(name_dict=option_dict)
+
+    bot.send_message(message.chat.id,msg_text,reply_markup=options_keyboard)
+
+
+    start_markup=extf.NewMarkupCommand(['start'])                   #generates start keyboard so user can return back to start
     bot.send_message(message.chat.id,'If you want to start over again press buttons',reply_markup=start_markup)
+
+    #generate call handler for handling comments, ratings and play - probably an external file. Also must generate and use class templates for movies, series and comics objects 
 
 #callback handler for series
 @bot.callback_query_handler(func=lambda call: call.data=='ser')
 
 def handle_ser(call):
-    series_lis=[]
-    series_keyboard=NewMarkupName(series_lis)
-    bot.send_message(call.message.chat.id, 'We have variety of series. Chose one from the button menu below: ',reply_markup=series_keyboard)
+
+    bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)
+    series_lis=['Atlantis','Young Justice','Regular Show']                                      #series list - must be replaced with database data
+    series_keyboard=extf.NewMarkupName(series_lis)
+    msg_text='We have variety of series. Chose one from the button menu below: '
+
+    bot.send_message(call.message.chat.id, msg_text, reply_markup=series_keyboard)
+
+    #function for nadling series season and episode choice
 
 #callback handler for comics
 @bot.callback_query_handler(func=lambda call: call.data=='com')
 
 def handle_com(call):
-    com_lis=[]
-    com_keyboard=NewMarkupName(com_lis)
-    bot.send_message(call.message.chat.id, 'We have variety of movies. Chose one from the button menu below: ',reply_markup=com_keyboard)
+    bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+    com_lis=['Ctr+Alt+Del',['Titans'],['Constantine hellblazer'],['Transmetroplitan']]          #comics list - must be replaced with database data
+    com_keyboard=extf.NewMarkupName(com_lis)
+    bot.send_message(call.message.chat.id, 'We have variety of comics. Chose one from the button menu below: ',reply_markup=com_keyboard)
 
+    #function for hadling comics year and number or issue choice - depends on comics
  
 #check for testing
 
 @bot.message_handler(commands='check')
 # inline keyboard appears under the message
 def MakeInlineMarkup(message):
-    new_markup=types.InlineKeyboardMarkup()
+    new_markup=types.InlineKeyboardMarkup(row_width=2)
 
-    button_1=types.InlineKeyboardButton(text='New Yes', callback_data='1')
-    button_2=types.InlineKeyboardButton(text='NEW No',callback_data='2')
-    button_3=types.InlineKeyboardButton(text='HELP! I NEED SOMEBODY',callback_data='3')
-    button_4=types.InlineKeyboardButton(text='start',callback_data='start')
+    button_1=types.InlineKeyboardButton(text='1st call', callback_data='1')
+    button_2=types.InlineKeyboardButton(text='2nd call', callback_data='2')
+    button_3=types.InlineKeyboardButton(text='3rd call',callback_data='3')
+    button_4=types.InlineKeyboardButton(text='Go to start the bot',callback_data='start')
 
     new_markup.add(button_1, button_2, button_3, button_4)
 
     bot.send_message(message.chat.id,'Wait a sec', reply_markup=new_markup)
 
-    new_new_markup=types.InlineKeyboardMarkup()
-    new_new_markup.add(types.InlineKeyboardButton('text 1',callback_data='1.1'))
+    # new_new_markup=types.InlineKeyboardMarkup()
+    # new_new_markup.add(types.InlineKeyboardButton('text 1',callback_data='1.1'))
 
-    bot.edit_message_reply_markup(chat_id=message.chat.id,message_id=message.message_id+1,reply_markup=new_new_markup)
+    # bot.edit_message_reply_markup(chat_id=message.chat.id,message_id=message.message_id+1,reply_markup=new_new_markup)
 
 @bot.callback_query_handler(func=lambda call: call.data=='1')
 
 def handle_query_1(call):
+    bot.answer_callback_query(callback_query_id=call.id,text='')
     bot.send_message(call.message.chat.id, 'Congratulations. We are number '+call.data)
 
 @bot.callback_query_handler(func=lambda call: call.data=='2' or call.data=='3')
 
 def handle_query(call):
-    bot.send_message(call.message.chat.id, 'Your stupid answer was :'+call.data)
+    bot.answer_callback_query(callback_query_id=call.id,text='You have chosen option 2 or 3')
+    bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+    bot.send_message(call.message.chat.id, 'Your incorrcet answer was :'+call.data)
 
 
 @bot.callback_query_handler(func=lambda call: call.data=='start')
 
 def handle_query(call):
-    message=types.Message(call)
-    start_bot(message)
-    bot.send_message(call.message.chat.id, 'Your stupid answer was :'+call.data)
+    bot.answer_callback_query(callback_query_id=call.id,text='Hello, I am Mordecai. I have deleted your Inline keyboard so you can go to start')
+    start_bot(call.message)   
 #Handler that passes that updates markup and waits for your response
-
-@bot.message_handler(commands='film')
-def ChoseFilm(message):
-
-    film_list=['Atlantis','Young Justice','Regular Show']
-    keyboard=NewMarkupName(film_lis=film_list)
-
-    bot.send_message(message.chat.id,'Choose movie you want to see: ', reply_markup=keyboard)
-
-    bot.register_next_step_handler(message,ViewMovie)
-
-def ViewMovie(message):
-
-    bot.send_message(message.chat.id,text=('Here it is) %s is your movie' % message.text), reply_markup=types.ReplyKeyboardRemove())
-    start_markup=NewMarkupCommand(['start'])
-    bot.send_message(message.chat.id,'If you want to start over again press buttons',reply_markup=start_markup)
-
 
 bot.infinity_polling()
