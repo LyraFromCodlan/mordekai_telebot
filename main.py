@@ -1,23 +1,29 @@
 import telebot
-import private_file
+import private_file as pf
 from telebot import types
 import ext_func as extf
 
 #functions for telebots handler
 def NewMarkupName(name_lis):                                            #names keyboard_generator
+    if name_lis==[]:
+        name_lis=['None']
+
     new_markup=types.ReplyKeyboardMarkup(one_time_keyboard=True)
     for el in name_lis:
         new_markup.add(types.KeyboardButton(text=el))
     return new_markup
 
 def NewMarkupCommand(com_lis):                                          #command keyboard generator
+    if com_lis==[]:
+        com_lis=['None']
+        
     new_markup=types.ReplyKeyboardMarkup(one_time_keyboard=True)
     for el in com_lis:
         new_markup.add(types.KeyboardButton(text='/'+el))
     return new_markup
 
 
-bot=telebot.TeleBot(private_file.API_name)                              #telebot generation
+bot=telebot.TeleBot(pf.API_name)                              #telebot generation
 
 @bot.message_handler(commands='start')
 
@@ -42,7 +48,7 @@ def start_bot(message):
 
 def handle_mov(call):
     bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)
-    movies_list=['Atlantis','Young Justice','Regular Show']                                     #movie list - must be replaced with database data
+    movies_list=['Batman: Bad Blood','8 mile','Regular Show through the universe']                                     #movie list - must be replaced with database data
     mov_keyboard=extf.NewMarkupName(name_lis=movies_list)
     msg_text='We have variety of movies. Chose one from the button menu below: '
 
@@ -52,8 +58,8 @@ def handle_mov(call):
 
 def ViewMovie(message):
     bot.send_message(message.chat.id,text=('You have chosen %s ' % message.text), reply_markup=types.ReplyKeyboardRemove())
-
     msg_text='Do you want to watch movie, access comments or give your rating?\nChose from the menu below'
+    pf.film_dict={'name':str.lower(message.text)}
     option_dict={'Watch':'wt','Comments':'cmnt','Rating':'rt'}
     options_keyboard=extf.NewInlineMarkup(name_dict=option_dict)
 
@@ -76,19 +82,63 @@ def handle_ser(call):
     msg_text='We have variety of series. Chose one from the button menu below: '
 
     bot.send_message(call.message.chat.id, msg_text, reply_markup=series_keyboard)
+    bot.register_next_step_handler(call.message, ChoseSeason)
 
-    #function for nadling series season and episode choice
+#function for nadling series season choice
+
+def ChoseSeason(message):
+    pf.series_dict={'name':str.lower(message.text)}
+    seasons=[] #Here is database call for number of seasons
+    season_markup=NewMarkupName(seasons)
+
+    bot.send_message(message.chat.id,text=('You have chosen %s' % message.text),reply_markup=types.ReplyKeyboardRemove())
+    bot.send_message(message.chat.id,text='Now chose season:',reply_markup=season_markup)
+
+    bot.register_next_step_handler(message, ChoseEpisode)
+
+#function for nadling series episode choice
+
+def ChoseEpisode(message):
+    pf.series_dict={'season':str.lower(message.text)}
+    episodes=[] #Here is database call for number of episodes
+    episodes_markup=NewMarkupName(episodes)
+    bot.send_message(message.chat.id,text='Now chose season:',reply_markup=episodes_markup)
+
+    #handler for View which will be made through class
+
+    
 
 #callback handler for comics
 @bot.callback_query_handler(func=lambda call: call.data=='com')
 
 def handle_com(call):
     bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-    com_lis=['Ctr+Alt+Del',['Titans'],['Constantine hellblazer'],['Transmetroplitan']]          #comics list - must be replaced with database data
+    com_lis=['Ctr+Alt+Del','Titans','Constantine hellblazer','Transmetroplitan']          #comics list - must be replaced with database data
     com_keyboard=extf.NewMarkupName(com_lis)
     bot.send_message(call.message.chat.id, 'We have variety of comics. Chose one from the button menu below: ',reply_markup=com_keyboard)
+    bot.register_next_step_handler(call.message, ChoseYear)
 
-    #function for hadling comics year and number or issue choice - depends on comics
+#function for hadling comics year of publishing
+
+def ChoseYear(message):
+    pf.series_dict={'name':str.lower(message.text)}
+    years=[] #Here is database call for number of year in which issue was published
+    years_markup=NewMarkupName(years)
+
+    bot.send_message(message.chat.id,text=('You have chosen %s comics' % message.text),reply_markup=types.ReplyKeyboardRemove())
+    bot.send_message(message.chat.id,text='Now chose year of publishing:',reply_markup=years_markup)
+
+    bot.register_next_step_handler(message, ChoseIssue)
+
+#function for hadling comics number of issue - depends on comics
+
+def ChoseIssue(message):
+    pf.series_dict={'season':str.lower(message.text)}
+    issues=[] #Here is database call for number of issues and their numbers in the database
+    issues_markup=NewMarkupName(issues)
+    bot.send_message(message.chat.id,text='Now chose issue:',reply_markup=issues_markup)
+
+    #handler for View which will be made through class
  
 #check for testing
 
