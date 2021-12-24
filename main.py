@@ -2,6 +2,7 @@ import telebot
 import private_file as pf
 from telebot import types
 import ext_func as extf
+from mysql.connector import connect, Error
 
 #functions for telebots handler
 def NewMarkupName(name_lis):                                            #names keyboard_generator
@@ -77,7 +78,7 @@ def ViewMovie(message):
 def handle_ser(call):
 
     bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)
-    series_lis=['Atlantis','Young Justice','Regular Show']                                      #series list - must be replaced with database data
+    series_lis=['Teen Titans','Young Justice','Regular Show']                                      #series list - must be replaced with database data
     series_keyboard=extf.NewMarkupName(series_lis)
     msg_text='We have variety of series. Chose one from the button menu below: '
 
@@ -113,7 +114,7 @@ def ChoseEpisode(message):
 
 def handle_com(call):
     bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-    com_lis=['Ctr+Alt+Del','Titans','Constantine hellblazer','Transmetroplitan']          #comics list - must be replaced with database data
+    com_lis=['Ctr+Alt+Del','Titans','Constantine Hellblazer','Transmetroplitan']          #comics list - must be replaced with database data
     com_keyboard=extf.NewMarkupName(com_lis)
     bot.send_message(call.message.chat.id, 'We have variety of comics. Chose one from the button menu below: ',reply_markup=com_keyboard)
     bot.register_next_step_handler(call.message, ChoseYear)
@@ -140,6 +141,42 @@ def ChoseIssue(message):
 
     #handler for View which will be made through class
  
+
+
+#check database_connection
+
+@bot.message_handler(commands='check_con')                                  #use command /check_con to start the connection checker
+
+def con_check(message):
+    try:                                                                        #try for safety of the connection
+        connection=connect(                                                     #connection to the database
+            host='localhost',
+            user='LyraHearthstrings', # input('User name: '),
+            password='20percentcooler', # getpass('Password: '),
+            database='mordecaitelebot' #database name in ''
+            )
+        if connection.is_connected():
+            db_Info = connection.get_server_info()                                      #gets info about mysql version
+            cursor = connection.cursor()
+            cursor.execute("select database();")                                        #performs db inquery calling database
+            record = str(cursor.fetchone()).replace(',','')                             #cathcing and formating reply from the database
+            record=(record[1:-1]).replace("'","")                                       #formating reply from the database
+            bot.send_message(message.chat.id,'Connected to MySQL Server version '+db_Info)      #message about MySQL server
+            bot.send_message(message.chat.id,'Database is connected to the '+str(record))       #message about connections status
+            cursor.execute("show tables;")                                              #new inquery for the db to check if exact db contains anything
+            record = str(cursor.fetchone()).replace(',','')                             #cathcing and formating reply from the database
+            record=(record[1:-1]).replace("'","")                                       #formating reply from the database
+            bot.send_message(message.chat.id,'Database contains:\n'+str(record))        #message about db tables
+
+    except Error as er:
+        bot.send_message(message.chat.id,'Error: '+er)                                  #if exception is caught sends corresponding message to user
+    finally:                                                                            #closing connection in case of successfull connection
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            bot.send_message(message.chat.id,'Actions performed\nMySQL connection is closed')   #message about successfull closing of the cnnection
+
+
 #check for testing
 
 @bot.message_handler(commands='check')
