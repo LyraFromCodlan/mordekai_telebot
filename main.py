@@ -1,42 +1,55 @@
+
 import telebot
 import private_file as pf
 from telebot import types
 import ext_func as extf
 from mysql.connector import connect, Error
 
-#functions for telebots handler
-def NewMarkupName(name_lis):                                            #names keyboard_generator
-    if name_lis==[]:
-        name_lis=['None']
-
-    new_markup=types.ReplyKeyboardMarkup(one_time_keyboard=True)
-    for el in name_lis:
-        new_markup.add(types.KeyboardButton(text=el))
-    return new_markup
-
-def NewMarkupCommand(com_lis):                                          #command keyboard generator
-    if com_lis==[]:
-        com_lis=['None']
-        
-    new_markup=types.ReplyKeyboardMarkup(one_time_keyboard=True)
-    for el in com_lis:
-        new_markup.add(types.KeyboardButton(text='/'+el))
-    return new_markup
-
 
 bot=telebot.TeleBot(pf.API_name)                              #telebot generation
 
-@bot.message_handler(commands='start')
 
+#Extensive functions are here closed by "#1-- --1" pareathesis, because they can't be imported without reffering to bot directly
+
+def check_connection(message):
+    try:                                                                        #try for safety of the connection
+        connection=connect(                                                     #connection to the database
+            host='localhost',
+            user='LyraHearthstrings', # input('User name: '),
+            password='20percentcooler', # getpass('Password: '),
+            database='mordecaitelebot' #database name in ''
+            )
+        if connection.is_connected():
+            connection.get_server_info()                                      #gets info about mysql version
+            cursor = connection.cursor()
+    except Error as er:
+        bot.send_message(message.chat.id,'Error: '+er)                                  #if exception is caught sends corresponding message to user
+    finally:                                                                            #closing connection in case of successfull connection
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def connect_to_db():
+    connection=connect(                                                     #connection to the database
+            host='localhost',
+            user='LyraHearthstrings', # input('User name: '),
+            password='20percentcooler', # getpass('Password: '),
+            database='mordecaitelebot' #database name in ''
+            )
+    return connection
+
+
+@bot.message_handler(commands='start')
 
 #start bot and handle first level requests
 
 def start_bot(message):
+    check_connection(message)
     options_keyboard=types.InlineKeyboardMarkup(row_width=3,keyboard=[   #keyboard for chosing types of entertaintment
         [
             types.InlineKeyboardButton(text='Movies',callback_data='mov'),
             types.InlineKeyboardButton(text='Series',callback_data='ser'),
-            types.InlineKeyboardButton(text='Comics',callback_data='com')
+            types.InlineKeyboardButton(text='Comics',callback_data='com'),
         ]
     ]
     )
@@ -50,6 +63,24 @@ def start_bot(message):
 def handle_mov(call):
     bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)
     movies_list=['Batman: Bad Blood','8 mile','Regular Show through the universe']                                     #movie list - must be replaced with database data
+    
+    # try:                                                                    #extracts names of movies from the database
+    #     connection=connect_to_db()
+    #     cursor = connection.cursor()
+    #     db_inquery="""select film_name from film_list;"""
+    #     cursor.execute(db_inquery)
+    #     movies_list=list(cursor.fetchone())
+    # except:
+    #     bot.send_message(chat_id=call.message.chat.id,text='Error happened')
+    # finally:
+    #     if connection.is_connected():
+    #         cursor.close()
+    #         connection.close()
+
+
+
+
+    movies_list.append('/start')                                                                    #appends 'start' command to be able to return back
     mov_keyboard=extf.NewMarkupName(name_lis=movies_list)
     msg_text='We have variety of movies. Chose one from the button menu below: '
 
@@ -77,20 +108,37 @@ def ViewMovie(message):
 
 def handle_ser(call):
 
-    bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)
-    series_lis=['Teen Titans','Young Justice','Regular Show']                                      #series list - must be replaced with database data
-    series_keyboard=extf.NewMarkupName(series_lis)
-    msg_text='We have variety of series. Chose one from the button menu below: '
+    bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)         #delete prevoius message to make interface free of unnecessary options
 
-    bot.send_message(call.message.chat.id, msg_text, reply_markup=series_keyboard)
-    bot.register_next_step_handler(call.message, ChoseSeason)
+    try:                                                                    #extracts names of movies from the database and preventing errors
+        connection=connect_to_db()
+        cursor = connection.cursor()
+        db_inquery="""select series_name from series_list;"""
+        cursor.execute(db_inquery)                                          #send inquery
+        series_lis=cursor.fetchall()                                        #catching db response
+        for ind, val in enumerate(series_lis):                              #formating db answer to represent it properly with the buttons
+            series_lis[ind]=str(val).replace(',','').replace(')','').replace('(','').replace("'",'')
+    except:
+        bot.send_message(chat_id=call.message.chat.id,text='Error happened')        #working with errors and letting user know tre is one
+    finally:                                                                        #closing connection after all operations are completed
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+
+    series_lis.append('/start')                                                                    #appends 'start' command to be able to return back
+    series_keyboard=extf.NewMarkupName(series_lis)
+    msg_text='We have variety of series. Chose one from the button menu below or press "\start" to return: '
+
+    bot.send_message(call.message.chat.id, msg_text, reply_markup=series_keyboard)                  #show the markup for user to chose series from the ones in the db
+    bot.register_next_step_handler(call.message, ChoseSeason)                                       #next stage is letting user chose the season
 
 #function for nadling series season choice
 
 def ChoseSeason(message):
     pf.series_dict={'name':str.lower(message.text)}
     seasons=[] #Here is database call for number of seasons
-    season_markup=NewMarkupName(seasons)
+    season_markup=extf.NewMarkupName(seasons)
 
     bot.send_message(message.chat.id,text=('You have chosen %s' % message.text),reply_markup=types.ReplyKeyboardRemove())
     bot.send_message(message.chat.id,text='Now chose season:',reply_markup=season_markup)
@@ -102,7 +150,7 @@ def ChoseSeason(message):
 def ChoseEpisode(message):
     pf.series_dict={'season':str.lower(message.text)}
     episodes=[] #Here is database call for number of episodes
-    episodes_markup=NewMarkupName(episodes)
+    episodes_markup=extf.NewMarkupName(episodes)
     bot.send_message(message.chat.id,text='Now chose season:',reply_markup=episodes_markup)
 
     #handler for View which will be made through class
@@ -113,10 +161,28 @@ def ChoseEpisode(message):
 @bot.callback_query_handler(func=lambda call: call.data=='com')
 
 def handle_com(call):
-    bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-    com_lis=['Ctr+Alt+Del','Titans','Constantine Hellblazer','Transmetroplitan']          #comics list - must be replaced with database data
+
+    bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)         #delete prevoius message to make interface free of unnecessary options
+
+    try:                                                                    #extracts names of movies from the database and preventing errors
+        connection=connect_to_db()
+        cursor = connection.cursor()
+        db_inquery="""select comics_name from comics_list;"""
+        cursor.execute(db_inquery)                                          #send inquery
+        com_lis=cursor.fetchall()                                        #catching db response
+        for ind, val in enumerate(com_lis):                              #formating db answer to represent it properly with the buttons
+            com_lis[ind]=str(val).replace(',','').replace(')','').replace('(','').replace("'",'')
+    except:
+        bot.send_message(chat_id=call.message.chat.id,text='Error happened')        #working with errors and letting user know tre is one
+    finally:                                                                        #closing connection after all operations are completed
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+
+    com_lis.append('/start')                                                                    #appends 'start' command to be able to return back
     com_keyboard=extf.NewMarkupName(com_lis)
-    bot.send_message(call.message.chat.id, 'We have variety of comics. Chose one from the button menu below: ',reply_markup=com_keyboard)
+    bot.send_message(call.message.chat.id, 'We have variety of comics. Chose one from the button menu below or press "\start" to return: ',reply_markup=com_keyboard)
     bot.register_next_step_handler(call.message, ChoseYear)
 
 #function for hadling comics year of publishing
@@ -124,7 +190,7 @@ def handle_com(call):
 def ChoseYear(message):
     pf.series_dict={'name':str.lower(message.text)}
     years=[] #Here is database call for number of year in which issue was published
-    years_markup=NewMarkupName(years)
+    years_markup=extf.NewMarkupName(years)
 
     bot.send_message(message.chat.id,text=('You have chosen %s comics' % message.text),reply_markup=types.ReplyKeyboardRemove())
     bot.send_message(message.chat.id,text='Now chose year of publishing:',reply_markup=years_markup)
@@ -136,7 +202,7 @@ def ChoseYear(message):
 def ChoseIssue(message):
     pf.series_dict={'season':str.lower(message.text)}
     issues=[] #Here is database call for number of issues and their numbers in the database
-    issues_markup=NewMarkupName(issues)
+    issues_markup=extf.NewMarkupName(issues)
     bot.send_message(message.chat.id,text='Now chose issue:',reply_markup=issues_markup)
 
     #handler for View which will be made through class
@@ -218,5 +284,7 @@ def handle_query(call):
     bot.answer_callback_query(callback_query_id=call.id,text='Hello, I am Mordecai. I have deleted your Inline keyboard so you can go to start')
     start_bot(call.message)   
 #Handler that passes that updates markup and waits for your response
+
+
 
 bot.infinity_polling()
