@@ -38,6 +38,23 @@ def connect_to_db():
             )
     return connection
 
+def extract_names_from_db(message, list_name):                              #function extract data from the database, must update not on;y to extract names, but rather all possible data
+    try:                                                                    #extracts names of entertainment typr from the database and preventing errors
+        connection=connect_to_db()
+        cursor = connection.cursor()
+        db_inquery="""select """+list_name+"""_name from """ +list_name+"""_list;"""
+        cursor.execute(db_inquery)                                          #send inquery
+        data_list=cursor.fetchall()                                        #catching db response
+        for ind, val in enumerate(data_list):                              #formating db answer to represent it properly with the buttons
+            data_list[ind]=str(val).replace(',','').replace(')','').replace('(','').replace("'",'')
+    except:
+        bot.send_message(chat_id=message.chat.id,text='Error happened')        #working with errors and letting user know tre is one
+        data_list=['empty']
+    finally:                                                                        #closing connection after all operations are completed
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+        return data_list
 
 @bot.message_handler(commands='start')
 
@@ -45,40 +62,37 @@ def connect_to_db():
 
 def start_bot(message):
     check_connection(message)
-    options_keyboard=types.InlineKeyboardMarkup(row_width=3,keyboard=[   #keyboard for chosing types of entertaintment
-        [
-            types.InlineKeyboardButton(text='Movies',callback_data='mov'),
-            types.InlineKeyboardButton(text='Series',callback_data='ser'),
-            types.InlineKeyboardButton(text='Comics',callback_data='com'),
-        ]
-    ]
-    )
+    options_dict={
+        'Films':'film',
+        'Series':'ser',
+        'Comics':'com'
+        }
+    options_keyboard=extf.NewInlineMarkup(options_dict)
+
     welcome_text='Welcome to Mordecai telegrambot. Today I will help you to entertain yourself. What would you like to watch?'
     bot.send_message(chat_id=message.chat.id,text=welcome_text, reply_markup=options_keyboard)
 
 
 #callback handler for movies
-@bot.callback_query_handler(func=lambda call: call.data=='mov')
+@bot.callback_query_handler(func=lambda call: call.data=='film')
 
 def handle_mov(call):
     bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)
-    movies_list=['Batman: Bad Blood','8 mile','Regular Show through the universe']                                     #movie list - must be replaced with database data
-    
-    # try:                                                                    #extracts names of movies from the database
-    #     connection=connect_to_db()
-    #     cursor = connection.cursor()
-    #     db_inquery="""select film_name from film_list;"""
-    #     cursor.execute(db_inquery)
-    #     movies_list=list(cursor.fetchone())
-    # except:
-    #     bot.send_message(chat_id=call.message.chat.id,text='Error happened')
-    # finally:
-    #     if connection.is_connected():
-    #         cursor.close()
-    #         connection.close()
-
-
-
+    #!!!!!!replace with single function
+    try:                                                                    #extracts names of movies from the database and preventing errors
+        connection=connect_to_db()
+        cursor = connection.cursor()
+        db_inquery="""select* from film_list;"""    #in the future change from selecting all to select only names of films
+        cursor.execute(db_inquery)                                          #send inquery
+        movies_list=cursor.fetchall()                                        #catching db response
+        for ind, val in enumerate(movies_list):                              #formating db answer to represent it properly with the buttons
+            movies_list[ind]=str(val).replace(',','').replace(')','').replace('(','').replace("'",'')
+    except:
+        bot.send_message(chat_id=call.message.chat.id,text='Error happened')        #working with errors and letting user know tre is one
+    finally:                                                                        #closing connection after all operations are completed
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
 
     movies_list.append('/start')                                                                    #appends 'start' command to be able to return back
     mov_keyboard=extf.NewMarkupName(name_lis=movies_list)
@@ -104,11 +118,12 @@ def ViewMovie(message):
     #generate call handler for handling comments, ratings and play - probably an external file. Also must generate and use class templates for movies, series and comics objects 
 
 #callback handler for series
-@bot.callback_query_handler(func=lambda call: call.data=='ser')
+@bot.callback_query_handler(func=lambda call: call.data=='series')
 
 def handle_ser(call):
 
     bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)         #delete prevoius message to make interface free of unnecessary options
+    #!!!!!!replace with single function
 
     try:                                                                    #extracts names of movies from the database and preventing errors
         connection=connect_to_db()
@@ -158,11 +173,12 @@ def ChoseEpisode(message):
     
 
 #callback handler for comics
-@bot.callback_query_handler(func=lambda call: call.data=='com')
+@bot.callback_query_handler(func=lambda call: call.data=='comics')
 
 def handle_com(call):
 
     bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)         #delete prevoius message to make interface free of unnecessary options
+    #!!!!!!replace with single function
 
     try:                                                                    #extracts names of movies from the database and preventing errors
         connection=connect_to_db()
