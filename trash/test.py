@@ -1,10 +1,10 @@
-import private_file
+import private_file as pf
 import telebot
 import ast
 import time
 from telebot import types
 
-bot = telebot.TeleBot(private_file.API_name)
+bot = telebot.TeleBot(pf.API_name)
 
 stringList = {"Name": "John", "Language": "Python", "API": "pyTelegramBotAPI"}
 crossIcon = u"\u274C"

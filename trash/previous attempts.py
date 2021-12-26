@@ -111,3 +111,52 @@
 #     bot.send_message(message.chat.id,text=('Here it is) %s is your movie' % message.text), reply_markup=types.ReplyKeyboardRemove())
 #     start_markup=extf.NewMarkupCommand(['start'])
 #     bot.send_message(message.chat.id,'If you want to start over again press buttons',reply_markup=start_markup)
+
+
+#raising of exceptions
+# try:
+#         movies_list=int(5)
+#         if isinstance(movies_list, int):
+#             raise Exception("WTF are you doing, man?")
+#     except Exception as ex:
+#         bot.send_message(chat_id=call.message.chat.id,text=ex)
+#     finally:
+#         bot.send_message(chat_id=call.message.chat.id,text='LOL work ended')
+
+
+# #check for testing
+
+# @bot.message_handler(commands='check')
+# # inline keyboard appears under the message
+# def MakeInlineMarkup(message):
+#     new_markup=types.InlineKeyboardMarkup(row_width=2)
+
+#     button_1=types.InlineKeyboardButton(text='1st call', callback_data='1')
+#     button_2=types.InlineKeyboardButton(text='2nd call', callback_data='2')
+#     button_3=types.InlineKeyboardButton(text='3rd call',callback_data='3')
+#     button_4=types.InlineKeyboardButton(text='Go to start the bot',callback_data='start')
+
+#     new_markup.add(button_1, button_2, button_3, button_4)
+
+#     bot.send_message(message.chat.id,'Wait a sec', reply_markup=new_markup)
+
+# @bot.callback_query_handler(func=lambda call: call.data=='1')
+
+# def handle_query_1(call):
+#     bot.answer_callback_query(callback_query_id=call.id,text='')
+#     bot.send_message(call.message.chat.id, 'Congratulations. We are number '+call.data)
+
+# @bot.callback_query_handler(func=lambda call: call.data=='2' or call.data=='3')
+
+# def handle_query(call):
+#     bot.answer_callback_query(callback_query_id=call.id,text='You have chosen option 2 or 3')
+#     bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+#     bot.send_message(call.message.chat.id, 'Your incorrcet answer was :'+call.data)
+
+
+# @bot.callback_query_handler(func=lambda call: call.data=='start')
+
+# def handle_query(call):
+#     bot.answer_callback_query(callback_query_id=call.id,text='Hello, I am Mordecai. I have deleted your Inline keyboard so you can go to start')
+#     start_bot(call.message)   
+# #Handler that passes that updates markup and waits for your response
