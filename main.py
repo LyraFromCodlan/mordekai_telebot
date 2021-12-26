@@ -38,6 +38,11 @@ def connect_to_db():
             )
     return connection
 
+def formate_resp(response):                         #fucntion formating db answer to represent it properly in the buttons or else
+    for ind, val in enumerate(response):                              
+        response[ind]=str(val).replace(',','').replace(')','').replace('(','').replace("'",'')
+    return response
+
 def extract_names_from_db(message, list_name):                              #function extract data from the database, must update not on;y to extract names, but rather all possible data
     try:                                                                    #extracts names of entertainment typr from the database and preventing errors
         connection=connect_to_db()
@@ -45,8 +50,8 @@ def extract_names_from_db(message, list_name):                              #fun
         db_inquery="""select """+list_name+"""_name from """ +list_name+"""_list;"""
         cursor.execute(db_inquery)                                          #send inquery
         data_list=cursor.fetchall()                                        #catching db response
-        for ind, val in enumerate(data_list):                              #formating db answer to represent it properly with the buttons
-            data_list[ind]=str(val).replace(',','').replace(')','').replace('(','').replace("'",'')
+        data_list=formate_resp(data_list)                                  #formating of recieve data to eleminate all unnecessry symbols
+        data_list.append('/start')                                          #appends 'start' command to be able to return back
     except:
         bot.send_message(chat_id=message.chat.id,text='Error happened')        #working with errors and letting user know tre is one
         data_list=['empty']
@@ -78,24 +83,10 @@ def start_bot(message):
 
 def handle_mov(call):
     bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)
-    #!!!!!!replace with single function
-    try:                                                                    #extracts names of movies from the database and preventing errors
-        connection=connect_to_db()
-        cursor = connection.cursor()
-        db_inquery="""select* from film_list;"""    #in the future change from selecting all to select only names of films
-        cursor.execute(db_inquery)                                          #send inquery
-        movies_list=cursor.fetchall()                                        #catching db response
-        for ind, val in enumerate(movies_list):                              #formating db answer to represent it properly with the buttons
-            movies_list[ind]=str(val).replace(',','').replace(')','').replace('(','').replace("'",'')
-    except:
-        bot.send_message(chat_id=call.message.chat.id,text='Error happened')        #working with errors and letting user know tre is one
-    finally:                                                                        #closing connection after all operations are completed
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
 
-    movies_list.append('/start')                                                                    #appends 'start' command to be able to return back
-    mov_keyboard=extf.NewMarkupName(name_lis=movies_list)
+    film_list=extract_names_from_db(call.message, call.data)                #extracts data from the database to form buttons
+
+    mov_keyboard=extf.NewMarkupName(name_lis=film_list)
     msg_text='We have variety of movies. Chose one from the button menu below: '
 
     bot.send_message(call.message.chat.id, msg_text, reply_markup=mov_keyboard)
@@ -141,7 +132,7 @@ def handle_ser(call):
             connection.close()
 
 
-    series_lis.append('/start')                                                                    #appends 'start' command to be able to return back
+    # series_lis=extract_names_from_db(call.message, call.data)                                                                   #appends 'start' command to be able to return back
     series_keyboard=extf.NewMarkupName(series_lis)
     msg_text='We have variety of series. Chose one from the button menu below or press "\start" to return: '
 
@@ -196,7 +187,7 @@ def handle_com(call):
             connection.close()
 
 
-    com_lis.append('/start')                                                                    #appends 'start' command to be able to return back
+    # com_lis=extract_names_from_db(call.message,call.data)                                                                 #appends 'start' command to be able to return back
     com_keyboard=extf.NewMarkupName(com_lis)
     bot.send_message(call.message.chat.id, 'We have variety of comics. Chose one from the button menu below or press "\start" to return: ',reply_markup=com_keyboard)
     bot.register_next_step_handler(call.message, ChoseYear)
