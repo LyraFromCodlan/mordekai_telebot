@@ -59,7 +59,7 @@ def extract_names_from_db(message, list_name):                              #fun
         if connection.is_connected():
             cursor.close()
             connection.close()
-        return data_list
+        return data_list                            #returns response as list of names
 
 @bot.message_handler(commands='start')
 
@@ -69,8 +69,8 @@ def start_bot(message):
     check_connection(message)
     options_dict={
         'Films':'film',
-        'Series':'ser',
-        'Comics':'com'
+        'Series':'series',
+        'Comics':'comics'
         }
     options_keyboard=extf.NewInlineMarkup(options_dict)
 
@@ -114,25 +114,7 @@ def ViewMovie(message):
 def handle_ser(call):
 
     bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)         #delete prevoius message to make interface free of unnecessary options
-    #!!!!!!replace with single function
-
-    try:                                                                    #extracts names of movies from the database and preventing errors
-        connection=connect_to_db()
-        cursor = connection.cursor()
-        db_inquery="""select series_name from series_list;"""
-        cursor.execute(db_inquery)                                          #send inquery
-        series_lis=cursor.fetchall()                                        #catching db response
-        for ind, val in enumerate(series_lis):                              #formating db answer to represent it properly with the buttons
-            series_lis[ind]=str(val).replace(',','').replace(')','').replace('(','').replace("'",'')
-    except:
-        bot.send_message(chat_id=call.message.chat.id,text='Error happened')        #working with errors and letting user know tre is one
-    finally:                                                                        #closing connection after all operations are completed
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
-
-
-    # series_lis=extract_names_from_db(call.message, call.data)                                                                   #appends 'start' command to be able to return back
+    series_lis=extract_names_from_db(call.message, call.data)                                   #extracts data from the database to form buttons
     series_keyboard=extf.NewMarkupName(series_lis)
     msg_text='We have variety of series. Chose one from the button menu below or press "\start" to return: '
 
@@ -157,7 +139,7 @@ def ChoseEpisode(message):
     pf.series_dict={'season':str.lower(message.text)}
     episodes=[] #Here is database call for number of episodes
     episodes_markup=extf.NewMarkupName(episodes)
-    bot.send_message(message.chat.id,text='Now chose season:',reply_markup=episodes_markup)
+    bot.send_message(message.chat.id,text='Now chose episode:',reply_markup=episodes_markup)
 
     #handler for View which will be made through class
 
@@ -169,28 +151,10 @@ def ChoseEpisode(message):
 def handle_com(call):
 
     bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)         #delete prevoius message to make interface free of unnecessary options
-    #!!!!!!replace with single function
-
-    try:                                                                    #extracts names of movies from the database and preventing errors
-        connection=connect_to_db()
-        cursor = connection.cursor()
-        db_inquery="""select comics_name from comics_list;"""
-        cursor.execute(db_inquery)                                          #send inquery
-        com_lis=cursor.fetchall()                                        #catching db response
-        for ind, val in enumerate(com_lis):                              #formating db answer to represent it properly with the buttons
-            com_lis[ind]=str(val).replace(',','').replace(')','').replace('(','').replace("'",'')
-    except:
-        bot.send_message(chat_id=call.message.chat.id,text='Error happened')        #working with errors and letting user know tre is one
-    finally:                                                                        #closing connection after all operations are completed
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
-
-
-    # com_lis=extract_names_from_db(call.message,call.data)                                                                 #appends 'start' command to be able to return back
+    com_lis=extract_names_from_db(call.message,call.data)                           #extracts data from the database to form buttons
     com_keyboard=extf.NewMarkupName(com_lis)
     bot.send_message(call.message.chat.id, 'We have variety of comics. Chose one from the button menu below or press "\start" to return: ',reply_markup=com_keyboard)
-    bot.register_next_step_handler(call.message, ChoseYear)
+    # bot.register_next_step_handler(call.message, ChoseYear)
 
 #function for hadling comics year of publishing
 
