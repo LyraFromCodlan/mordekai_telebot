@@ -11,6 +11,8 @@ bot=telebot.TeleBot(pf.API_name)                              #telebot generatio
 
 #Extensive functions are here closed by "#1-- --1" pareathesis, because they can't be imported without reffering to bot directly
 
+#1--
+
 def check_connection(message):
     try:                                                                        #try for safety of the connection
         connection=connect_to_db()
@@ -38,12 +40,17 @@ def formate_resp(response):                         #fucntion formating db answe
         response[ind]=str(val).replace(',','').replace(')','').replace('(','').replace("'",'')
     return response
 
-def extract_names_from_db(message, list_name):                              #function extract data from the database, must update not on;y to extract names, but rather all possible data
+def extract_names_from_db(message, list_names, action):                              #function extract data from the database, must update not on;y to extract names, but rather all possible data
     try:                                                                    #extracts names of entertainment typr from the database and preventing errors
         connection=connect_to_db()
         cursor = connection.cursor()
-        db_inquery="""select """+list_name+"""_name from """ +list_name+"""_list;"""
-        cursor.execute(db_inquery)                                          #send inquery
+                                                                #series of ifs to chose correct db inquiry
+        if action in ['film','series','comics']:
+            db_inquiry="""select """+list_names+"""_name from """ +list_names+"""_list;"""
+
+
+
+        cursor.execute(db_inquiry)                                          #send inquery
         data_list=cursor.fetchall()                                        #catching db response
         data_list=formate_resp(data_list)                                  #formating of recieve data to eleminate all unnecessry symbols
         data_list.append('/start')                                          #appends 'start' command to be able to return back
@@ -55,6 +62,27 @@ def extract_names_from_db(message, list_name):                              #fun
             cursor.close()
             connection.close()
         return data_list                            #returns response as list of names
+
+
+# class Series():                                         #class that holds all info about series
+#     series_name: str
+#     series_seas_ep: dict
+#     episode_rating: int
+
+# class Comics():                                         #class that holds all info about comics
+#     comics_name: str
+#     comics_seas_ep: dict
+#     comics_rating: int
+
+# class Film():                                         #class that holds all info about film
+#     comics_name: str
+#     comics_seas_ep: dict
+#     comics_rating: int
+#     def __init__(self, message, action):
+#         return extract_names_from_db(message,name,action)
+
+
+#--1
 
 @bot.message_handler(commands='start')
 
@@ -91,7 +119,7 @@ def handle_mov(call):
 def ViewMovie(message):
     bot.send_message(message.chat.id,text=('You have chosen %s ' % message.text), reply_markup=types.ReplyKeyboardRemove())
     msg_text='Do you want to watch movie, access comments or give your rating?\nChose from the menu below'
-    pf.film_dict={'name':str.lower(message.text)}
+    # Film film=Film(message, message.text, "init_film")                                              #initializes class, which hold all movie info, uncluding link
     option_dict={'Watch':'wt','Comments':'cmnt','Rating':'rt'}
     options_keyboard=extf.NewInlineMarkup(name_dict=option_dict)
 
